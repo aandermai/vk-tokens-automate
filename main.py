@@ -1,17 +1,10 @@
-import base64
-import hashlib
-import json
-import secrets
-from urllib.parse import parse_qs, urlencode, urlparse
+import re
 
-import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
-from vk.app import create_vk_app
-from vk.oauth import get_tokens
+from vk.app import check_vk_app, create_vk_app
+from vk.oauth import generate_pkce, get_auth_url, get_tokens, parse_authorization_url
 
 APP_NAME = "VK Video Views"
 DOMAIN_NAME = "vk.com"
@@ -22,51 +15,33 @@ driver = webdriver.Chrome()
 
 # Авторизация в профиле ВК
 driver.get("https://id.vk.com/about/business/go")
-input("Авторизуйся в профиле ВК, а затем нажми Enter...")
+input("Авторизуйся в профиле ВК и нажми кнопку разрешения, а затем нажми здесь Enter...")
 
-# Поиск приложения с названием app_name
-titles = driver.find_elements(
-    By.CSS_SELECTOR,
-    "div[class^='styles_title']"
-)
+vk_app_exist = check_vk_app(driver, APP_NAME)
 
-exists = any(title.text.strip() == APP_NAME for title in titles)
+if vk_app_exist:
+    app_id_div = driver.find_element(
+        By.CSS_SELECTOR,
+        "div[class^='styles_id']"
+    )
 
-if exists:
-    print("Приложение существует")
+    client_id = re.search(r"\d+", app_id_div.text).group()
 else:
-    print("Приложения нет")
-
     create_vk_app(driver, APP_NAME, DOMAIN_NAME, REDIRECT_URI)
+
     app_id_input = driver.find_element(
         By.CSS_SELECTOR,
         'input[name="id"]'
     )
 
     client_id = app_id_input.get_attribute("value")
-    code_verifier = secrets.token_urlsafe(64)
-    code_challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(code_verifier.encode()).digest()
-    ).decode().rstrip("=")
 
-    params = {
-        "response_type": "code",
-        "client_id": client_id,
-        "scope": "video,wall,groups",
-        "redirect_uri": REDIRECT_URI,
-        "state": "12345",
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256",
-    }
+code_verifier, code_challenge = generate_pkce()
+auth_url = get_auth_url(client_id, REDIRECT_URI, code_challenge)
 
-    auth_url = "https://id.vk.com/authorize?" + urlencode(params)
+driver.get(auth_url)
+url = driver.current_url
 
-    driver.get(auth_url)
-    url = driver.current_url
+authorization_code, device_id = parse_authorization_url(url)
 
-    params = parse_qs(urlparse(url).query)
-
-    authorization_code = params["code"][0]
-    device_id = params["device_id"][0]
-
-    get_tokens(TOKENS_FILE, client_id, authorization_code, code_verifier, device_id, REDIRECT_URI)
+get_tokens(TOKENS_FILE, client_id, authorization_code, code_verifier, device_id, REDIRECT_URI)

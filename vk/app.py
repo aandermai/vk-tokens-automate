@@ -1,6 +1,24 @@
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+def check_vk_app(driver: WebDriver, app_name: str) -> bool:
+    """
+    Проверка наличия приложения в библиотеке пользователя
+
+    Аргументы:
+    - driver - Веб-драйвер Selenium
+    - app_name - Название приложения, которое ищут
+    """
+    titles = driver.find_elements(
+        By.CSS_SELECTOR,
+        "div[class^='styles_title']"
+    )
+
+    exists = any(title.text.strip() == app_name for title in titles)
+
+    return exists
 
 def create_vk_app(driver, app_name, domain_name, redirect_uri):
     # Клик по кнопке создания приложения
@@ -16,7 +34,6 @@ def create_vk_app(driver, app_name, domain_name, redirect_uri):
             (By.CSS_SELECTOR, 'input[placeholder="Моё приложение"]')
         )
     )
- 
     app_name_input.send_keys(app_name)
 
     # Выбор типа приложения
@@ -57,14 +74,16 @@ def create_vk_app(driver, app_name, domain_name, redirect_uri):
     )
     create_app_button.click()
 
-    input("Введите код от ВК и нажмите Enter...")
+    input("Введите код от ВК и нажмите здесь Enter...")
 
+    # Нажатие кнопки "Настроить позже"
     settings_later_button = driver.find_element(
         By.XPATH,
         "//button[.//span[normalize-space()='Настроить позже']]"
     )
     settings_later_button.click()
 
+    # Нажатие кнопки "Закрыть"
     close_button = driver.find_element(
         By.XPATH,
         "//button[.//span[normalize-space()='Закрыть']]"
