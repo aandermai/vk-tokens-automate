@@ -26,7 +26,7 @@
 ## Установка
 ### 1. Клонирование репозитория
 ```
-git clone https://github.com/USERNAME/vk-tokens-automate.git 
+git clone https://github.com/aandermai/vk-tokens-automate.git 
 cd vk-tokens-automate
 ```
 ### 2. Создание и запуск виртуального окружения
