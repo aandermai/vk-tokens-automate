@@ -44,6 +44,10 @@ def create_vk_app(driver, app_name, domain_name, redirect_uri):
     if web_switch.get_attribute("aria-checked") == "false":
         web_switch.find_element(By.XPATH, "./..").click()
 
+        WebDriverWait(driver, 10).until(
+            lambda driver: web_switch.get_attribute("aria-checked") == "true"
+        )
+
     # Нажатие кнопки "Далее"
     continue_button = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable(
@@ -82,11 +86,4 @@ def create_vk_app(driver, app_name, domain_name, redirect_uri):
         "//button[.//span[normalize-space()='Настроить позже']]"
     )
     settings_later_button.click()
-
-    # Нажатие кнопки "Закрыть"
-    close_button = driver.find_element(
-        By.XPATH,
-        "//button[.//span[normalize-space()='Закрыть']]"
-    )
-    close_button.click()
     
