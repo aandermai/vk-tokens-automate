@@ -41,6 +41,7 @@ def create_vk_app(driver, app_name, domain_name, redirect_uri):
         By.CSS_SELECTOR,
         'input[role="switch"][value="web"]'
     )
+    
     if web_switch.get_attribute("aria-checked") == "false":
         web_switch.find_element(By.XPATH, "./..").click()
 
